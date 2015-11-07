@@ -30,6 +30,7 @@ RE_BC_CUSTOM = Regex('customBC\.createVideo\((.+)\);') # Custom BrightCove JS
 RE_CODECS = Regex('codecs="([^"]+)"')
 RE_WHITESPACE = Regex('\s*,\s*')
 RE_META_REFRESH = Regex('<meta.+?http-equiv=.refresh.+?content=.([0-9]+;url=)?(?P<url>https?://[^"\']+)', Regex.IGNORECASE)
+RE_KALTURA = Regex('kaltura.com/.+?/wid/(?P<wid>_?[0-9]+)/.+?/entry_id/(?P<entry_id>[a-z0-9_]{10})')
 
 ####################################################################################################
 def FixUrl(parent_url, url):
@@ -127,7 +128,7 @@ def CodecsForVideoTypeValue(value):
 
 ####################################################################################################
 def NormalizeURL(url):
-
+	
 	return url
 
 ####################################################################################################
@@ -252,8 +253,17 @@ def MetadataObjectForURL(url):
 
 				return URLService.MetadataObjectForURL(bc_url)
 
+			# Kaltura Video
+			kaltura = RE_KALTURA.search(doc.xpath('//meta[@property="og:video"]/@content')[0])
+			
+			if kaltura:
+				Log.Debug(' --> [Metadata] Found a Kaltura video using the Kaltura regex')
+				video = doc.xpath('//meta[@property="og:video"]/@content')[0]
+				#proceed to get metadata from Regex Video patterns
+
 			# Regex Video
-			video = RE_PATTERN.search(req.content)
+			if not video:
+				video = RE_PATTERN.search(req.content)
 
 			if video:
 				Log.Debug(' --> [Metadata] Found a video using the regex')
@@ -378,7 +388,22 @@ def MediaObjectsForURL(url):
 					result.append(MediaObject(**attrs))
 
 				return result
-
+			
+			# Kaltura Video
+			kaltura = RE_KALTURA.search(doc.xpath('//meta[@property="og:video"]/@content')[0])
+			if kaltura:
+				wid = kaltura.group('wid').strip('_')
+				entry_id = kaltura.group('entry_id')
+				src = 'http://cdnapi.kaltura.com/p/%s/sp/%s00/playManifest/entryId/%s/format/url/protocol/http' % (wid, wid, entry_id)
+				return [
+						MediaObject(
+							container = Container.MP4,
+							video_codec = VideoCodec.H264,
+							audio_codec = AudioCodec.AAC,
+							parts = [PartObject(key=src)]
+						)
+					]
+				
 			# Regex Video
 			video = RE_PATTERN.findall(req.content)
 			result = []
