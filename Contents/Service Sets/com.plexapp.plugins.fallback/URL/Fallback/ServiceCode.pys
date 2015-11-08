@@ -30,7 +30,7 @@ RE_BC_CUSTOM = Regex('customBC\.createVideo\((.+)\);') # Custom BrightCove JS
 RE_CODECS = Regex('codecs="([^"]+)"')
 RE_WHITESPACE = Regex('\s*,\s*')
 RE_META_REFRESH = Regex('<meta.+?http-equiv=.refresh.+?content=.([0-9]+;url=)?(?P<url>https?://[^"\']+)', Regex.IGNORECASE)
-RE_KALTURA = Regex('<meta.+?content=.https?.\/\/(?:cdnapi|www)\.kaltura\.com.*?\/(?:wid|p)\/(?P<wid>_?[0-9]{7})\/.+?\/entry_id\/(?P<entry_id>[a-z0-9_]{10}).+?', Regex.IGNORECASE)
+RE_KALTURA = Regex('<meta.+?content=.https?.\/\/(?:cdnapi|www|cfvod)\.kaltura\.com.*?\/(?:wid|p)\/(?P<wid>_?[0-9]{6,7})\/.+?\/entry_id\/(?P<entry_id>[a-z0-9_]{10}).+?', Regex.IGNORECASE)
 
 ####################################################################################################
 def FixUrl(parent_url, url):
