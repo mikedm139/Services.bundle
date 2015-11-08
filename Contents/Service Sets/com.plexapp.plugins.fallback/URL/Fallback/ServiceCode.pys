@@ -30,7 +30,7 @@ RE_BC_CUSTOM = Regex('customBC\.createVideo\((.+)\);') # Custom BrightCove JS
 RE_CODECS = Regex('codecs="([^"]+)"')
 RE_WHITESPACE = Regex('\s*,\s*')
 RE_META_REFRESH = Regex('<meta.+?http-equiv=.refresh.+?content=.([0-9]+;url=)?(?P<url>https?://[^"\']+)', Regex.IGNORECASE)
-RE_KALTURA = Regex('kaltura.com/.+?/wid/(?P<wid>_?[0-9]+)/.+?/entry_id/(?P<entry_id>[a-z0-9_]{10})')
+RE_KALTURA = Regex('<meta.+?content=.https?.\/\/(?:cdnapi|www)\.kaltura\.com.*?\/(?:wid|p)\/(?P<wid>_?[0-9]{7})\/.+?\/entry_id\/(?P<entry_id>[a-z0-9_]{10}).+?', Regex.IGNORECASE)
 
 ####################################################################################################
 def FixUrl(parent_url, url):
@@ -87,7 +87,14 @@ def ShouldParse(req):
 	try:
 		content_length = int(req.headers['content-length'])
 	except:
-		content_length = 0
+		# some valid headers purposefully don't provide 'content-legnth', try to catch them too
+		try:
+			x_hacker = req.headers['X-hacker']
+			Log.Debug('Found "x-hacker" header instead of "content-length". Heh! Nice job application :) --> "%s" ' % x_hacker)
+			#assign a non-zero value to content_length
+			content_length = len(x_hacker)
+		except:
+			content_length = 0
 
 	Log("Length: %d  Type: %s", content_length, content_type)
 	if (content_length <= 0 or content_length > MAX_LENGTH) and content_type not in VALID_TYPES:
@@ -254,11 +261,11 @@ def MetadataObjectForURL(url):
 				return URLService.MetadataObjectForURL(bc_url)
 
 			# Kaltura Video
-			kaltura = RE_KALTURA.search(doc.xpath('//meta[@property="og:video"]/@content')[0])
+			kaltura = RE_KALTURA.search(req.content)
 			
 			if kaltura:
 				Log.Debug(' --> [Metadata] Found a Kaltura video using the Kaltura regex')
-				video = doc.xpath('//meta[@property="og:video"]/@content')[0]
+				video = True
 				#proceed to get metadata from Regex Video patterns
 
 			# Regex Video
@@ -390,7 +397,7 @@ def MediaObjectsForURL(url):
 				return result
 			
 			# Kaltura Video
-			kaltura = RE_KALTURA.search(doc.xpath('//meta[@property="og:video"]/@content')[0])
+			kaltura = RE_KALTURA.search(req.content)
 			if kaltura:
 				wid = kaltura.group('wid').strip('_')
 				entry_id = kaltura.group('entry_id')
