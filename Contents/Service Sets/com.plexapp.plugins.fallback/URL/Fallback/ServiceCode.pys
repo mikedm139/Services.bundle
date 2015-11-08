@@ -6,6 +6,9 @@ VALID_TYPES = ['text/html', 'application/xhtml+xml']
 # Only allow response sizes below a certain length for arbitrary types
 MAX_LENGTH = 1024
 
+# Allow some specific headers as alternatives to 'content-length' when it is purposefully left out
+LENGTH_ALTERNATIVES = ['X-Me','X-hacker']
+
 EMBEDDED_VIDEO = [
 	'//iframe[not(@id="konami-video")]/@src|//pagespeed_iframe/@src',
 	'//embed/@src',
@@ -89,10 +92,14 @@ def ShouldParse(req):
 	except:
 		# some valid headers purposefully don't provide 'content-legnth', try to catch them too
 		try:
-			x_hacker = req.headers['X-hacker']
-			Log.Debug('Found "x-hacker" header instead of "content-length". Heh! Nice job application :) --> "%s" ' % x_hacker)
+			for header in LENGTH_ALTERNATIVES:
+				try:
+					x_header = req.headers[header]
+					break
+				except:
+					pass
 			#assign a non-zero value to content_length
-			content_length = len(x_hacker)
+			content_length = len(x_header)
 		except:
 			content_length = 0
 
