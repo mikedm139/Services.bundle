@@ -7,7 +7,7 @@ VALID_TYPES = ['text/html', 'application/xhtml+xml']
 MAX_LENGTH = 1024
 
 EMBEDDED_VIDEO = [
-	'//iframe/@src|//pagespeed_iframe/@src',
+	'//iframe[not(@id="konami-video")]/@src|//pagespeed_iframe/@src',
 	'//embed/@src',
 	'//object/@data',
 	'//param[@name="flashvars"]/@value',
